@@ -1,0 +1,31 @@
+---
+title: "EDA Mid_term"
+author: "Bharat P"
+date: "2022-10-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(kableExtra)
+```
+For the purpose of analysis, the stock data of each month is considered from 2012-2021 for the following 14 metals/mining stocks. In which the first 7 of them are Indian Companies and the other 7 are American Companies.
+```{r}
+Companies=c('TATA STEEL','HINDALCO','STEEL AUTHORITY OF INDIA (SAIL)','NATIONAL ALUMINIUM COMPANY (NALCO)','VEDANTA','JSW STEEL','NATIONAL MINERAL DEVELOPMENT CORP (NMDC)','CAMECO','STEEL DYNAMICS','UNITED STATES STEEL CORPORATION','NUCOR CORP','CLEAVELAND CLIFFS','VALE','COMMERCIAL METAL COMPANY')
+SLNo=c(1:14)
+stock_tab=data.frame(SLNo,Companies)
+(stock_tab) %>%
+  kbl() %>%
+  kable_material(c("striped", "hover"))
+```
+
+
+Initially, we import the CSV files containing the stock data of all the  business days in a month. The CSV file contains the Open, Close, High and Low prices along with the adjusted Close Price and Volume of considered stock.
+The below table shows the contents of the DataFrame
+```{r}
+Stock_Data=read.csv('TATASTEEL.NS-2021-1.csv')
+head(Stock_Data) %>%
+  kbl() %>%
+  kable_material(c("striped", "hover"))
+```
+
