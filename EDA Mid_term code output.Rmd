@@ -1,0 +1,182 @@
+---
+title: "EDA Midterm Output code"
+author: "Bharat P"
+date: "2022-11-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("./EDA_code.R")
+```
+
+The function below is in the function source file "EDA code.R" and is presented here for better understanding
+
+```{r eval=FALSE}
+
+# A function to read all csv files in the folder 
+stock_dat<-function(file_path) # Function that takes the file path as input
+  {
+  file_paths=fs::dir_ls(file_path) # Gets the file path of all files
+    ccsv=list()
+    for (i in seq_along(file_paths)) # iterating through the each file path 
+      {
+    ccsv[[i]]<-data.frame(read.csv(file=file_paths[i])) # putting the file contents in a list
+    }
+  return(ccsv)
+```
+
+
+Passing the file path to get the csv file from each folder where the stock data is contained.
+
+**Make sure you change the file paths in the below function to where the data files are housed, before executing**
+```{r}
+#Make sure you change the file paths in the below function to where the data files are housed, before executing
+
+TS_csv=stock_dat("C:/Users/Bharat P/Documents/Data Folder/Tata Steel")   
+X_csv=stock_dat("C:/Users/Bharat P/Documents/Data Folder/US Steel")
+NLCO_csv=stock_dat("C:/Users/Bharat P/Documents/Data Folder/NALCO")  
+NUC_csv=stock_dat("C:/Users/Bharat P/Documents/Data Folder/Nucor")
+HLCO_csv=stock_dat("C:/Users/Bharat P/Documents/Data Folder/Hindalco") 
+CCJ_csv=stock_dat("C:/Users/Bharat P/Documents/Data Folder/Cameco")
+SAIL_csv=stock_dat("C:/Users/Bharat P/Documents/Data Folder/SAIL")  
+CLF_csv=stock_dat("C:/Users/Bharat P/Documents/Data Folder/Cleaveland Cliffs")
+JSW_csv=stock_dat("C:/Users/Bharat P/Documents/Data Folder/JSW")   
+CMC_csv=stock_dat("C:/Users/Bharat P/Documents/Data Folder/Commercial metals company")
+NMDC_csv=stock_dat("C:/Users/Bharat P/Documents/Data Folder/NMDC")
+STLD_csv=stock_dat("C:/Users/Bharat P/Documents/Data Folder/Steel Dynamics")
+VED_csv=stock_dat("C:/Users/Bharat P/Documents/Data Folder/Vedanta")   
+VALE_csv=stock_dat("C:/Users/Bharat P/Documents/Data Folder/VALE")
+```
+
+
+
+
+
+
+The below function takes in the stock data and expected change as inputs and gives out the success, failure and no opportunity counts.
+
+
+ The function below is in the source file `EDA_code.R`  
+```{r eval=FALSE}
+stock_stats=function(list_data_frame,u_change)
+{
+  First_Day_down=numeric(100)   # Initializing the arrays to store the number of success and failures
+  Second_Day_down=numeric(100)
+  Third_Day_down=numeric(100)
+  First_Day_up=numeric(100)
+  Second_Day_up=numeric(100)
+  Third_Day_up=numeric(100)
+  failure=numeric(100)
+  no_opportunity=numeric(100)
+  k=numeric(1)                
+  
+  for (i in 1:length(list_data_frame)){        # Iterating through each dataframe for individual stock
+    Datee=as.Date(list_data_frame[[i]]$Date,format="%Y-%m-%d") # Getting the dates in each month
+    Day=format(Datee,"%d")                     # Extracting only days from the date
+    Day=as.integer(Day)-13                     # Converting the day type to integer and subtracting 13 
+    ind=numeric(1)
+    for (j in 1:(length(Day)-2)){              # Looping through the extracted (days -13)
+      if ((Day[j]*Day[j+1])<=0){               # If this criteria is satisfied we get 13th 
+        ind[1]<-j                              # Getting the index of 13th
+      } else{                                  # If the condition is not satisfied the loop proceeds to next iteration
+        next
+      }
+    }
+    
+    
+    t1=((list_data_frame[[i]]$High[ind+1])-(list_data_frame[[i]]$High[ind]))/((list_data_frame[[i]]$Low[ind+1])-(list_data_frame[[i]]$Low[ind]));     # ((H2-H1)/(L2-L1)) criteria
+    t2=((list_data_frame[[i]]$High[ind+3])-(list_data_frame[[i]]$High[ind+2]))/((list_data_frame[[i]]$Low[ind+3])-(list_data_frame[[i]]$Low[ind+2])); #  ((H4-H3)/(L4-L3)) criteria
+    
+    if ((t1>0 & t2>0 & is.nan(t1)==FALSE & is.nan(t2)==FALSE)) # Condition to check Gann's triangles formation
+      {
+      if (((list_data_frame[[i]]$Low[ind+4])<(list_data_frame[[i]]$Low[ind+3]))&((list_data_frame[[i]]$High[ind+4])<(list_data_frame[[i]]$High[ind+3]))) # Condition to check if trade is favourable in downward direction
+        {                                                                                                                                     
+        if (((-1*((list_data_frame[[i]]$Low[ind+5])-(list_data_frame[[i]]$Low[ind+3])))>=((u_change/100)*list_data_frame[[i]]$Low[ind+3])) || # Checking if the stock crossed u_change from L4 on 1st day
+            ((-1*((list_data_frame[[i]]$Low[ind+6])-(list_data_frame[[i]]$Low[ind+3])))>=((u_change/100)*list_data_frame[[i]]$Low[ind+3])) || # Checking if the stock crossed u_change from L4 on 2nd day
+            ((-1*((list_data_frame[[i]]$Low[ind+7])-(list_data_frame[[i]]$Low[ind+3])))>=(u_change/100)*list_data_frame[[i]]$Low[ind+3])) {   # Checking if the stock crossed u_change from L4 on 3rd day
+          
+          if (((-1*((list_data_frame[[i]]$Low[ind+5])-(list_data_frame[[i]]$Low[ind+3])))>=((u_change/100)*list_data_frame[[i]]$Low[ind+3]))==TRUE){
+             First_Day_down=append(First_Day_down,1)                                                                                                 # Appending the array if the 1st day condition is satisfied
+          }
+          else if (((-1*((list_data_frame[[i]]$Low[ind+6])-(list_data_frame[[i]]$Low[ind+3])))>=((u_change/100)*list_data_frame[[i]]$Low[ind+3]))==TRUE){
+            Second_Day_down=append(Second_Day_down,1)                                                                                                # Appending the array if the 2nd day condition is satisfied
+            k=1
+          } 
+          else if (((-1*((list_data_frame[[i]]$Low[ind+7])-(list_data_frame[[i]]$Low[ind+3])))>=((u_change/100)*list_data_frame[[i]]$Low[ind+3]))==TRUE){
+            Third_Day_down=append(Third_Day_down,1)                                                                                                  # Appending the array if the 3rd day condition is satisfied
+          }
+        } else{
+          failure=append(failure,1)   # If none of the condition is satisfied then counting it as a failure
+        }
+      }
+      else if (((list_data_frame[[i]]$Low[ind+4])>(list_data_frame[[i]]$Low[ind+3]))&((list_data_frame[[i]]$High[ind+4])>(list_data_frame[[i]]$High[ind+3]))) # Condition to check if trade is favourable in upward direction
+      {
+        if (((((list_data_frame[[i]]$High[ind+5])-(list_data_frame[[i]]$High[ind+3])))>=((u_change/100)*list_data_frame[[i]]$High[ind+3])) ||           # Checking if the stock crossed u_change from L4 on 1st day
+            ((((list_data_frame[[i]]$High[ind+6])-(list_data_frame[[i]]$High[ind+3])))>=((u_change/100)*list_data_frame[[i]]$High[ind+3])) ||           # Checking if the stock crossed u_change from L4 on 2nd day
+            ((((list_data_frame[[i]]$High[ind+7])-(list_data_frame[[i]]$High[ind+3])))>=(u_change/100)*list_data_frame[[i]]$High[ind+3])) {             # Checking if the stock crossed u_change from L4 on 3rd day
+          if (((((list_data_frame[[i]]$High[ind+5])-(list_data_frame[[i]]$High[ind+3])))>=((u_change/100)*list_data_frame[[i]]$High[ind+3]))==TRUE){
+            First_Day_up=append(First_Day_up,1)                                                                                                         # Appending the array if the 1st day condition is satisfied   
+          }
+          else if (((((list_data_frame[[i]]$High[ind+6])-(list_data_frame[[i]]$High[ind+3])))>=((u_change/100)*list_data_frame[[i]]$High[ind+3]))==TRUE){
+            Second_Day_up=append(Second_Day_up,1)                                                                                                       # Appending the array if the 2nd day condition is satisfied
+          } else if (((((list_data_frame[[i]]$High[ind+7])-(list_data_frame[[i]]$High[ind+3])))>=((u_change/100)*list_data_frame[[i]]$High[ind+3]))==TRUE){
+            Third_Day_up=append(Third_Day_up,1)                                                                                                         # Appending the array if the 3rd day condition is satisfied        
+          }
+        } else{
+          failure=append(failure,1)      # If none of the condition is satisfied then counting it as a failure
+        }
+      } else{
+        no_opportunity=append(no_opportunity,1)  # If the criteria to get the direction is not satisfied then it is counted as no opportunity
+      }
+    } else {
+      no_opportunity=append(no_opportunity,1)  # If the criteria to get the direction is not satisfied then it is counted as no opportunity
+    }
+  }
+  sum_succ=(sum(First_Day_down)+sum(Second_Day_down)+sum(Third_Day_down)+   # Summing all the successes
+              sum(First_Day_up)+sum(Second_Day_up)+sum(Third_Day_up))
+  sum_failure=(sum(failure))                                            # Summing the failures
+  sum_no=(sum(no_opportunity))                                          # Summing the no opportunity 
+  
+  f_success<<-sum(First_Day_up)+sum(First_Day_down)                     # Summing the first day success 
+  s_success<<-sum(Second_Day_up)+sum(Second_Day_down)                   # Summing the second day success
+  T_success<<-sum(Third_Day_up)+sum(Third_Day_down)                     # Summing the third day success
+  return(c(sum_succ,sum_failure,sum_no))                                # Returning a vector of total success, failure and no opportunity for a stock
+}
+```
+
+Passing the CSV files of the stocks into the function `stock_stats` by setting u_change=2 for all the stocks
+```{r}
+TS_stats=stock_stats(TS_csv,2)   
+X_stats=stock_stats(X_csv,2)
+NLCO_stats=stock_stats(NLCO_csv,2)  
+NUC_stats=stock_stats(NUC_csv,2)
+HLCO_stats=stock_stats(HLCO_csv,2) 
+CCJ_stats=stock_stats(CCJ_csv,2)
+SAIL_stats=stock_stats(SAIL_csv,2)  
+CLF_stats=stock_stats(CLF_csv,2)
+JSW_stats=stock_stats(JSW_csv,2)   
+CMC_stats=stock_stats(CMC_csv,2)
+NMDC_stats=stock_stats(NMDC_csv,2)
+STLD_stats=stock_stats(STLD_csv,2)
+VED_stats=stock_stats(VED_csv,2)   
+VALE_stats=stock_stats(VALE_csv,2)
+```
+
+```{r}
+# Creating a dataframe to combine the results of all the stocks
+SF_Data=data.frame(TS_stats,X_stats,NLCO_stats,NUC_stats,HLCO_stats,CCJ_stats,SAIL_stats,CLF_stats,
+                   JSW_stats,CMC_stats,NMDC_stats,STLD_stats,VED_stats,VALE_stats)
+SF_Data=t(SF_Data) # Transposing the Dataframe
+
+# Renaming the rows of the dataframe
+row.names(SF_Data)<-c('TATASTEEL','US STEEL','NALCO','NUCOR','HINDALCO','CAMECO','SAIL',
+                      'CLEVELAND','JSW STEEL','COMM.METAL','NMDC','STEEL DYN','VEDANTA','VALE')
+
+# Renaming the columns of the dataframe
+
+colnames(SF_Data)<-c('Success','Failure','No opportunity')
+
+SF_Data
+```
+
