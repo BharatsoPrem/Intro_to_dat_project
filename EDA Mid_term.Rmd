@@ -1,15 +1,36 @@
 ---
-title: "EDA Mid_term"
-author: "Bharat P"
-date: "2022-10-30"
-output: html_document
+title: "Group 6 Intro to DS Midterm"
+author: "Adewale Maye, Bharat Premnath, and Ponswarnalaya Ravichandran"
+# date: "today"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_folding: hide
+    number_sections: false
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(warning = F, results = "markup", message = F)
+options(scientific=T, digits = 3) 
 library(kableExtra)
+library(ezids)
+source("./EDA_code.R")
 ```
+
+# Predicting Market Outcomes Using Gann's Theory of Market Cycles
+
+## Project Summary
+
+For our project, we use Gann's Theory of Market Cycles to determine whether it is possible for steel and mining companies to exploit Gann's theory of market cycles to take position in the stock market?
+
 For the purpose of analysis, the stock data of each month is considered from 2012-2021 for the following 14 metals/mining stocks. In which the first 7 of them are Indian Companies and the other 7 are American Companies.
+
 ```{r}
 Companies=c('TATA STEEL','HINDALCO','STEEL AUTHORITY OF INDIA (SAIL)','NATIONAL ALUMINIUM COMPANY (NALCO)','VEDANTA','JSW STEEL','NATIONAL MINERAL DEVELOPMENT CORP (NMDC)','CAMECO','STEEL DYNAMICS','UNITED STATES STEEL CORPORATION','NUCOR CORP','CLEAVELAND CLIFFS','VALE','COMMERCIAL METAL COMPANY')
 SLNo=c(1:14)
@@ -19,13 +40,454 @@ stock_tab=data.frame(SLNo,Companies)
   kable_material(c("striped", "hover"))
 ```
 
+## Gathering the Data
 
-Initially, we import the CSV files containing the stock data of all the  business days in a month. The CSV file contains the Open, Close, High and Low prices along with the adjusted Close Price and Volume of considered stock.
-The below table shows the contents of the DataFrame
-```{r}
-Stock_Data=read.csv('TATASTEEL.NS-2021-1.csv')
-head(Stock_Data) %>%
-  kbl() %>%
-  kable_material(c("striped", "hover"))
+Initially, we import the CSV files containing the stock data of all the business days in a month. The CSV file contains the Open, Close, High and Low prices along with the adjusted Close Price and Volume of considered stock.
+
+The function below is in the function source file "EDA code.R" and is presented here for better understanding
+
+```{r eval=FALSE}
+
+# A function to read all csv files in the folder 
+stock_dat<-function(file_path) # Function that takes the file path as input
+  {
+  file_paths=fs::dir_ls(file_path) # Gets the file path of all files
+    ccsv=list()
+    for (i in seq_along(file_paths)) # iterating through the each file path 
+      {
+    ccsv[[i]]<-data.frame(read.csv(file=file_paths[i])) # putting the file contents in a list
+    }
+  return(ccsv)
 ```
 
+Passing the file path to get the csv file from each folder where the stock data is contained.
+
+**Make sure you change the file paths in the below function to where the data files are housed, before executing**
+
+```{r}
+#Make sure you change the file paths in the below function to where the data files are housed, before executing
+
+TS_csv=stock_dat("/Users/amaye1/Documents/Github/Intro_to_dat_project/Dataset/Tata Steel")   
+X_csv=stock_dat("/Users/amaye1/Documents/Github/Intro_to_dat_project/Dataset/US Steel")
+NLCO_csv=stock_dat("/Users/amaye1/Documents/Github/Intro_to_dat_project/Dataset//NALCO")  
+NUC_csv=stock_dat("/Users/amaye1/Documents/Github/Intro_to_dat_project/Dataset//Nucor")
+HLCO_csv=stock_dat("/Users/amaye1/Documents/Github/Intro_to_dat_project/Dataset//Hindalco") 
+CCJ_csv=stock_dat("/Users/amaye1/Documents/Github/Intro_to_dat_project/Dataset//Cameco")
+SAIL_csv=stock_dat("/Users/amaye1/Documents/Github/Intro_to_dat_project/Dataset//SAIL")  
+CLF_csv=stock_dat("/Users/amaye1/Documents/Github/Intro_to_dat_project/Dataset/Cleaveland Cliffs")
+JSW_csv=stock_dat("/Users/amaye1/Documents/Github/Intro_to_dat_project/Dataset/JSW")   
+CMC_csv=stock_dat("/Users/amaye1/Documents/Github/Intro_to_dat_project/Dataset/Commercial metals company")
+NMDC_csv=stock_dat("/Users/amaye1/Documents/Github/Intro_to_dat_project/Dataset/NMDC")
+STLD_csv=stock_dat("/Users/amaye1/Documents/Github/Intro_to_dat_project/Dataset//Steel Dynamics")
+VED_csv=stock_dat("/Users/amaye1/Documents/Github/Intro_to_dat_project/Dataset/Vedanta")   
+VALE_csv=stock_dat("/Users/amaye1/Documents/Github/Intro_to_dat_project/Dataset/VALE")
+```
+
+## Exploratory Data Analysis
+
+Below I provide the summary statistics for each of the data sets for the stock companies we'll be reviewing from 2012 to 2021. These statistics include the minimum, maximum, median, mean, Q1, and Q3 for each company at open, high, low, and close over the decade. The following companies are listed in the order of: Tata Steel, US Steel, NLCO, NUC, HLCO, CCJ, SAIL, CLF, JSW, CMC, NMDC, STLD, VED, and VALE.
+
+```{r}
+library(readr)
+
+# Tata Steel
+Tata_Steel = data.frame(read.csv("DS Midterm Data/TATASTEEL.NS-2012-2021.csv"))
+Tata_Steel = subset(Tata_Steel, select = -c(Date))
+xkablesummary(Tata_Steel)
+
+# US Steel
+US_Steel = data.frame(read.csv("DS Midterm Data/X-2012-2021.csv"))
+US_Steel = subset(US_Steel, select = -c(Date))
+xkablesummary(US_Steel)
+
+# NLCO
+NLCO = data.frame(read.csv("DS Midterm Data/NATIONALUM.NS-2012-2021.csv"))
+NLCO = subset(NLCO, select = -c(Date))
+xkablesummary(NLCO)
+
+#NUC
+NUC = data.frame(read.csv("DS Midterm Data/NUE-2012-2021.csv"))
+NUC = subset(NUC, select = -c(Date))
+xkablesummary(NUC)
+
+# HLCO
+HLCO = data.frame(read.csv("DS Midterm Data/HINDALCO.NS-2012-2021.csv"))
+HLCO = subset(HLCO, select = -c(Date))
+xkablesummary(HLCO)
+
+# CCJ
+CCJ = data.frame(read.csv("DS Midterm Data/CCJ-2012-2021.csv"))
+CCJ = subset(CCJ, select = -c(Date))
+xkablesummary(CCJ)
+
+# SAIL
+SAIL = data.frame(read.csv("DS Midterm Data/SAIL.NS-2012-2021.csv"))
+SAIL = subset(SAIL, select = -c(Date))
+xkablesummary(SAIL)
+
+# CLF
+CLF = data.frame(read.csv("DS Midterm Data/CLF-2012-2021.csv"))
+CLF = subset(CLF, select = -c(Date))
+xkablesummary(CLF)
+
+# JSW
+JSW = data.frame(read.csv("DS Midterm Data/JSWSTEEL.NS-2012-2021.csv"))
+JSW = subset(JSW, select = -c(Date))
+xkablesummary(JSW)
+
+# CMC
+CMC = data.frame(read.csv("DS Midterm Data/CMC-2012-2021.csv"))
+CMC = subset(CMC, select = -c(Date))
+xkablesummary(CMC)
+
+# NMDC
+NMDC = data.frame(read.csv("DS Midterm Data/NMDC.NS-2012-2021.csv"))
+NMDC = subset(NMDC, select = -c(Date))
+xkablesummary(NMDC)
+
+# STLD
+STLD = data.frame(read.csv("DS Midterm Data/STLD-2012-2021.csv"))
+STLD = subset(STLD, select = -c(Date))
+xkablesummary(STLD)
+
+# VED
+VED = data.frame(read.csv("DS Midterm Data/VEDL.NS-2012-2021.csv"))
+VED = subset(VED, select = -c(Date))
+xkablesummary(VED)
+
+# VALE
+VALE = data.frame(read.csv("DS Midterm Data/VALE-2012-2021.csv"))
+VALE = subset(VALE, select = -c(Date))
+xkablesummary(VALE)
+
+```
+
+To further explore this data, we conducted histograms and normal QQ plots to graphically represent the data and test each company's normality --- specifically looking at the high and lows for each company over the decade.
+
+```{r}
+
+# Tata Steel Histograms and Normal QQ Plot
+hist(Tata_Steel$High, main = "Histogram of Tata Steel Highs from 2012-2021", col = 'green')
+hist(Tata_Steel$Low, main = "Histogram of Tata Steel Lows from 2012-2021", col = 'red')
+qqnorm(Tata_Steel$High, main = "Tata Steel High Normal Q-Q Plot")
+qqnorm(Tata_Steel$Low, main = "Tata Steel Low Normal Q-Q Plot")
+
+# US Steel Histograms and Normal QQ Plot
+hist(US_Steel$High, main = "Histogram of US Steel Highs from 2012-2021", col = 'green')
+hist(US_Steel$Low, main = "Histogram of US Steel Lows from 2012-2021", col = 'red')
+qqnorm(US_Steel$High, main = "US Steel High Normal Q-Q Plot")
+qqnorm(US_Steel$Low, main = "US Steel Low Normal Q-Q Plot")
+
+# NLCO Histograms and Normal QQ Plot
+hist(NLCO$High, main = "Histogram of NLCO Highs from 2012-2021", col = 'green')
+hist(NLCO$Low, main = "Histogram of NLCO Lows from 2012-2021", col = 'red')
+qqnorm(NLCO$High, main = "NLCO High Normal Q-Q Plot")
+qqnorm(NLCO$Low, main = "NLCO Low Normal Q-Q Plot")
+
+# NUC Histograms and Normal QQ Plot
+hist(NUC$High, main = "Histogram of NUC Highs from 2012-2021", col = 'green')
+hist(NUC$Low, main = "Histogram of NUC Lows from 2012-2021", col = 'red')
+qqnorm(NUC$High, main = "NUC High Normal Q-Q Plot")
+qqnorm(NUC$Low, main = "NUC Low Normal Q-Q Plot")
+
+# HLCO Histograms and Normal QQ Plot
+hist(HLCO$High, main = "Histogram of HLCO  Highs from 2012-2021", col = 'green')
+hist(HLCO$Low, main = "Histogram of HLCO Lows from 2012-2021", col = 'red')
+qqnorm(HLCO$High, main = "HLCO High Normal Q-Q Plot")
+qqnorm(HLCO$Low, main = "HLCO Low Normal Q-Q Plot")
+
+# CCJ Histograms and Normal QQ Plot
+hist(CCJ$High, main = "Histogram of CCJ Highs from 2012-2021", col = 'green')
+hist(CCJ$Low, main = "Histogram of CCJ Lows from 2012-2021", col = 'red')
+qqnorm(CCJ$High, main = "CCJ High Normal Q-Q Plot")
+qqnorm(CCJ$Low, main = "CCJ Low Normal Q-Q Plot")
+
+# SAIL Histograms and Normal QQ Plot
+hist(SAIL$High, main = "Histogram of SAIL Highs from 2012-2021", col = 'green')
+hist(SAIL$Low, main = "Histogram of SAIL Lows from 2012-2021", col = 'red')
+qqnorm(SAIL$High, main = "SAIL High Normal Q-Q Plot")
+qqnorm(SAIL$Low, main = "SAIL Low Normal Q-Q Plot")
+
+# CLF Histograms and Normal QQ Plot
+hist(CLF$High, main = "Histogram of CLF Highs from 2012-2021", col = 'green')
+hist(CLF$Low, main = "Histogram of CLF Lows from 2012-2021", col = 'red')
+qqnorm(CLF$High, main = "CLF High Normal Q-Q Plot")
+qqnorm(CLF$Low, main = "CLF Low Normal Q-Q Plot")
+
+# JSW Histograms and Normal QQ Plot
+hist(JSW$High, main = "Histogram of JSW Highs from 2012-2021", col = 'green')
+hist(JSW$Low, main = "Histogram of JSW Lows from 2012-2021", col = 'red')
+qqnorm(JSW$High, main = "JSW High Normal Q-Q Plot")
+qqnorm(JSW$Low, main = "JSW Low Normal Q-Q Plot")
+
+# CMC Histograms and Normal QQ Plot
+hist(CMC$High, main = "Histogram of CMC Highs from 2012-2021", col = 'green')
+hist(CMC$Low, main = "Histogram of CMC Lows from 2012-2021", col = 'red')
+qqnorm(CMC$High, main = "CMC High Normal Q-Q Plot")
+qqnorm(CMC$Low, main = "CMC Low Normal Q-Q Plot")
+
+# NMDC Histograms and Normal QQ Plot
+hist(NMDC$High, main = "Histogram of NMDC Highs from 2012-2021", col = 'green')
+hist(NMDC$Low, main = "Histogram of NMDC Lows from 2012-2021", col = 'red')
+qqnorm(NMDC$High, main = "NMDC High Normal Q-Q Plot")
+qqnorm(NMDC$Low, main = "NMDC Low Normal Q-Q Plot")
+
+# STLD Histograms and Normal QQ Plot
+hist(STLD$High, main = "Histogram of STLD Highs from 2012-2021", col = 'green')
+hist(STLD$Low, main = "Histogram of STLD Lows from 2012-2021", col = 'red')
+qqnorm(STLD$High, main = "STLD High Normal Q-Q Plot")
+qqnorm(STLD$Low, main = "STLD Low Normal Q-Q Plot")
+
+# VED Histograms and Normal QQ Plot
+hist(VED$High, main = "Histogram of VED Highs from 2012-2021", col = 'green')
+hist(VED$Low, main = "Histogram of VED Lows from 2012-2021", col = 'red')
+qqnorm(VED$High, main = "VED High Normal Q-Q Plot")
+qqnorm(VED$Low, main = "VED Low Normal Q-Q Plot")
+
+# VALE Histograms and Normal QQ Plot
+hist(VALE$High, main = "Histogram of VALE Highs from 2012-2021", col = 'green')
+hist(VALE$Low, main = "Histogram of VALE Lows from 2012-2021", col = 'red')
+qqnorm(VALE$High, main = "VALE High Normal Q-Q Plot")
+qqnorm(VALE$Low, main = "VALE Low Normal Q-Q Plot")
+
+```
+
+We'll now look at the variance for each company regarding the highs and lows over the decade.
+
+```{r}
+
+# Tata Steel Variance
+var(Tata_Steel$High)
+var(Tata_Steel$Low)
+
+# US Steel Variance
+var(US_Steel$High)
+var(US_Steel$Low)
+
+# NLCO Variance
+var(NLCO$High)
+var(NLCO$Low)
+
+# NUC Variance
+var(NUC$High)
+var(NUC$Low)
+
+# HLCO Variance
+var(HLCO$High)
+var(HLCO$Low)
+
+# CCJ Variance
+var(CCJ$High)
+var(CCJ$Low)
+
+# SAIL Variance
+var(SAIL$High)
+var(SAIL$Low)
+
+# CLF Variance
+var(CLF$High)
+var(CLF$Low)
+
+# JSW Variance
+var(JSW$High)
+var(JSW$Low)
+
+# CMC Variance
+var(CMC$High)
+var(CMC$Low)
+
+# NMDC Variance
+var(NMDC$High)
+var(NMDC$Low)
+
+# STLD Variance
+var(STLD$High)
+var(STLD$Low)
+
+# VED Variance
+var(VED$High)
+var(VED$Low)
+
+# VALE Variance
+var(VALE$High)
+var(VALE$Low)
+```
+
+We also conducted a chi-squared test on the closing price and adjusted closing price for the companies.
+
+```{r}
+# Tata Steel Chi-Squared Test
+chisq.test(Tata_Steel$Close, Tata_Steel$Adj.Close, correct=FALSE)
+
+# US Steel Chi-Squared Test
+chisq.test(US_Steel$Close, US_Steel$Adj.Close, correct=FALSE)
+
+# NLCO Chi-Squared Test
+chisq.test(NLCO$Close, NLCO$Adj.Close, correct=FALSE)
+
+# NUC Chi-Squared Test
+chisq.test(NUC$Close, NUC$Adj.Close, correct=FALSE)
+
+# HLCO Chi-Squared Test
+chisq.test(HLCO$Close, HLCO$Adj.Close, correct=FALSE)
+
+# CCJ Chi-Squared Test
+chisq.test(CCJ$Close, CCJ$Adj.Close, correct=FALSE)
+
+# SAIL Chi-Squared Test
+chisq.test(SAIL$Close, SAIL$Adj.Close, correct=FALSE)
+
+# CLF Chi-Squared Test
+chisq.test(CLF$Close, CLF$Adj.Close, correct=FALSE)
+
+# JSW Chi-Squared Test
+chisq.test(JSW$Close, JSW$Adj.Close, correct=FALSE)
+
+# CMC Chi-Squared Test
+chisq.test(CMC$Close, CMC$Adj.Close, correct=FALSE)
+
+# NMDC Chi-Squared Test
+chisq.test(NMDC$Close, NMDC$Adj.Close, correct=FALSE)
+
+# STLD Chi-Squared Test
+chisq.test(STLD$Close, STLD$Adj.Close, correct=FALSE)
+
+# VED Chi-Squared Test
+chisq.test(VED$Close, VED$Adj.Close, correct=FALSE)
+
+# VALE Chi-Squared Test
+chisq.test(VALE$Close, VALE$Adj.Close, correct=FALSE)
+```
+
+## Analysis
+
+The below function takes in the stock data and expected change as inputs and gives out the success, failure and no opportunity counts.
+
+The function below is in the source file `EDA_code.R`
+
+```{r eval=FALSE}
+stock_stats=function(list_data_frame,u_change)
+{
+  First_Day_down=numeric(100)   # Initializing the arrays to store the number of success and failures
+  Second_Day_down=numeric(100)
+  Third_Day_down=numeric(100)
+  First_Day_up=numeric(100)
+  Second_Day_up=numeric(100)
+  Third_Day_up=numeric(100)
+  failure=numeric(100)
+  no_opportunity=numeric(100)
+  k=numeric(1)                
+  
+  for (i in 1:length(list_data_frame)){        # Iterating through each dataframe for individual stock
+    Datee=as.Date(list_data_frame[[i]]$Date,format="%Y-%m-%d") # Getting the dates in each month
+    Day=format(Datee,"%d")                     # Extracting only days from the date
+    Day=as.integer(Day)-13                     # Converting the day type to integer and subtracting 13 
+    ind=numeric(1)
+    for (j in 1:(length(Day)-2)){              # Looping through the extracted (days -13)
+      if ((Day[j]*Day[j+1])<=0){               # If this criteria is satisfied we get 13th 
+        ind[1]<-j                              # Getting the index of 13th
+      } else{                                  # If the condition is not satisfied the loop proceeds to next iteration
+        next
+      }
+    }
+    
+    
+    t1=((list_data_frame[[i]]$High[ind+1])-(list_data_frame[[i]]$High[ind]))/((list_data_frame[[i]]$Low[ind+1])-(list_data_frame[[i]]$Low[ind]));     # ((H2-H1)/(L2-L1)) criteria
+    t2=((list_data_frame[[i]]$High[ind+3])-(list_data_frame[[i]]$High[ind+2]))/((list_data_frame[[i]]$Low[ind+3])-(list_data_frame[[i]]$Low[ind+2])); #  ((H4-H3)/(L4-L3)) criteria
+    
+    if ((t1>0 & t2>0 & is.nan(t1)==FALSE & is.nan(t2)==FALSE)) # Condition to check Gann's triangles formation
+      {
+      if (((list_data_frame[[i]]$Low[ind+4])<(list_data_frame[[i]]$Low[ind+3]))&((list_data_frame[[i]]$High[ind+4])<(list_data_frame[[i]]$High[ind+3]))) # Condition to check if trade is favourable in downward direction
+        {                                                                                                                                     
+        if (((-1*((list_data_frame[[i]]$Low[ind+5])-(list_data_frame[[i]]$Low[ind+3])))>=((u_change/100)*list_data_frame[[i]]$Low[ind+3])) || # Checking if the stock crossed u_change from L4 on 1st day
+            ((-1*((list_data_frame[[i]]$Low[ind+6])-(list_data_frame[[i]]$Low[ind+3])))>=((u_change/100)*list_data_frame[[i]]$Low[ind+3])) || # Checking if the stock crossed u_change from L4 on 2nd day
+            ((-1*((list_data_frame[[i]]$Low[ind+7])-(list_data_frame[[i]]$Low[ind+3])))>=(u_change/100)*list_data_frame[[i]]$Low[ind+3])) {   # Checking if the stock crossed u_change from L4 on 3rd day
+          
+          if (((-1*((list_data_frame[[i]]$Low[ind+5])-(list_data_frame[[i]]$Low[ind+3])))>=((u_change/100)*list_data_frame[[i]]$Low[ind+3]))==TRUE){
+             First_Day_down=append(First_Day_down,1)                                                                                                 # Appending the array if the 1st day condition is satisfied
+          }
+          else if (((-1*((list_data_frame[[i]]$Low[ind+6])-(list_data_frame[[i]]$Low[ind+3])))>=((u_change/100)*list_data_frame[[i]]$Low[ind+3]))==TRUE){
+            Second_Day_down=append(Second_Day_down,1)                                                                                                # Appending the array if the 2nd day condition is satisfied
+            k=1
+          } 
+          else if (((-1*((list_data_frame[[i]]$Low[ind+7])-(list_data_frame[[i]]$Low[ind+3])))>=((u_change/100)*list_data_frame[[i]]$Low[ind+3]))==TRUE){
+            Third_Day_down=append(Third_Day_down,1)                                                                                                  # Appending the array if the 3rd day condition is satisfied
+          }
+        } else{
+          failure=append(failure,1)   # If none of the condition is satisfied then counting it as a failure
+        }
+      }
+      else if (((list_data_frame[[i]]$Low[ind+4])>(list_data_frame[[i]]$Low[ind+3]))&((list_data_frame[[i]]$High[ind+4])>(list_data_frame[[i]]$High[ind+3]))) # Condition to check if trade is favourable in upward direction
+      {
+        if (((((list_data_frame[[i]]$High[ind+5])-(list_data_frame[[i]]$High[ind+3])))>=((u_change/100)*list_data_frame[[i]]$High[ind+3])) ||           # Checking if the stock crossed u_change from L4 on 1st day
+            ((((list_data_frame[[i]]$High[ind+6])-(list_data_frame[[i]]$High[ind+3])))>=((u_change/100)*list_data_frame[[i]]$High[ind+3])) ||           # Checking if the stock crossed u_change from L4 on 2nd day
+            ((((list_data_frame[[i]]$High[ind+7])-(list_data_frame[[i]]$High[ind+3])))>=(u_change/100)*list_data_frame[[i]]$High[ind+3])) {             # Checking if the stock crossed u_change from L4 on 3rd day
+          if (((((list_data_frame[[i]]$High[ind+5])-(list_data_frame[[i]]$High[ind+3])))>=((u_change/100)*list_data_frame[[i]]$High[ind+3]))==TRUE){
+            First_Day_up=append(First_Day_up,1)                                                                                                         # Appending the array if the 1st day condition is satisfied   
+          }
+          else if (((((list_data_frame[[i]]$High[ind+6])-(list_data_frame[[i]]$High[ind+3])))>=((u_change/100)*list_data_frame[[i]]$High[ind+3]))==TRUE){
+            Second_Day_up=append(Second_Day_up,1)                                                                                                       # Appending the array if the 2nd day condition is satisfied
+          } else if (((((list_data_frame[[i]]$High[ind+7])-(list_data_frame[[i]]$High[ind+3])))>=((u_change/100)*list_data_frame[[i]]$High[ind+3]))==TRUE){
+            Third_Day_up=append(Third_Day_up,1)                                                                                                         # Appending the array if the 3rd day condition is satisfied        
+          }
+        } else{
+          failure=append(failure,1)      # If none of the condition is satisfied then counting it as a failure
+        }
+      } else{
+        no_opportunity=append(no_opportunity,1)  # If the criteria to get the direction is not satisfied then it is counted as no opportunity
+      }
+    } else {
+      no_opportunity=append(no_opportunity,1)  # If the criteria to get the direction is not satisfied then it is counted as no opportunity
+    }
+  }
+  sum_succ=(sum(First_Day_down)+sum(Second_Day_down)+sum(Third_Day_down)+   # Summing all the successes
+              sum(First_Day_up)+sum(Second_Day_up)+sum(Third_Day_up))
+  sum_failure=(sum(failure))                                            # Summing the failures
+  sum_no=(sum(no_opportunity))                                          # Summing the no opportunity 
+  
+  f_success<<-sum(First_Day_up)+sum(First_Day_down)                     # Summing the first day success 
+  s_success<<-sum(Second_Day_up)+sum(Second_Day_down)                   # Summing the second day success
+  T_success<<-sum(Third_Day_up)+sum(Third_Day_down)                     # Summing the third day success
+  return(c(sum_succ,sum_failure,sum_no))                                # Returning a vector of total success, failure and no opportunity for a stock
+}
+```
+
+Passing the CSV files of the stocks into the function `stock_stats` by setting u_change=2 for all the stocks
+
+```{r}
+TS_stats=stock_stats(TS_csv,2)   
+X_stats=stock_stats(X_csv,2)
+NLCO_stats=stock_stats(NLCO_csv,2)  
+NUC_stats=stock_stats(NUC_csv,2)
+HLCO_stats=stock_stats(HLCO_csv,2) 
+CCJ_stats=stock_stats(CCJ_csv,2)
+SAIL_stats=stock_stats(SAIL_csv,2)  
+CLF_stats=stock_stats(CLF_csv,2)
+JSW_stats=stock_stats(JSW_csv,2)   
+CMC_stats=stock_stats(CMC_csv,2)
+NMDC_stats=stock_stats(NMDC_csv,2)
+STLD_stats=stock_stats(STLD_csv,2)
+VED_stats=stock_stats(VED_csv,2)   
+VALE_stats=stock_stats(VALE_csv,2)
+```
+
+## Results
+
+Below is the function of successes, failures, and undetermined opportunities in predicting stock outcomes using Cann's Theory.
+
+```{r}
+# Creating a dataframe to combine the results of all the stocks
+SF_Data=data.frame(TS_stats,X_stats,NLCO_stats,NUC_stats,HLCO_stats,CCJ_stats,SAIL_stats,CLF_stats,
+                   JSW_stats,CMC_stats,NMDC_stats,STLD_stats,VED_stats,VALE_stats)
+SF_Data=t(SF_Data) # Transposing the Dataframe
+
+# Renaming the rows of the dataframe
+row.names(SF_Data)<-c('TATASTEEL','US STEEL','NALCO','NUCOR','HINDALCO','CAMECO','SAIL',
+                      'CLEVELAND','JSW STEEL','COMM.METAL','NMDC','STEEL DYN','VEDANTA','VALE')
+
+# Renaming the columns of the dataframe
+
+colnames(SF_Data)<-c('Success','Failure','No opportunity')
+
+SF_Data
+```
